@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+import { toast } from 'sonner';
 
 type Message = {
   id: number;
@@ -24,13 +26,27 @@ type Chat = {
   unread?: number;
 };
 
+type UserData = {
+  phone: string;
+  name: string;
+  status: string;
+  isAuthenticated: boolean;
+};
+
 const Index = () => {
   const [loading, setLoading] = useState(true);
+  const [showPhoneInput, setShowPhoneInput] = useState(false);
+  const [showCodeInput, setShowCodeInput] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [sentCode, setSentCode] = useState('');
+  
   const [activeTab, setActiveTab] = useState('chats');
   const [selectedChat, setSelectedChat] = useState<number | null>(null);
   const [messageText, setMessageText] = useState('');
   const [userName, setUserName] = useState('GamerPro');
   const [userStatus, setUserStatus] = useState('В игре');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const [chats] = useState<Chat[]>([
     { id: 1, name: 'Артем', avatar: '🎮', lastMessage: 'Го в Dota?', time: '12:30', unread: 2 },
@@ -47,9 +63,31 @@ const Index = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       setLoading(false);
+      const savedUser = localStorage.getItem('rilmas_user');
+      if (savedUser) {
+        const userData: UserData = JSON.parse(savedUser);
+        setIsAuthenticated(userData.isAuthenticated);
+        setUserName(userData.name);
+        setUserStatus(userData.status);
+        setPhoneNumber(userData.phone);
+      } else {
+        setShowPhoneInput(true);
+      }
     }, 1500);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      const userData: UserData = {
+        phone: phoneNumber,
+        name: userName,
+        status: userStatus,
+        isAuthenticated: true,
+      };
+      localStorage.setItem('rilmas_user', JSON.stringify(userData));
+    }
+  }, [isAuthenticated, phoneNumber, userName, userStatus]);
 
   const sendMessage = () => {
     if (messageText.trim()) {
@@ -61,6 +99,31 @@ const Index = () => {
       };
       setMessages([...messages, newMessage]);
       setMessageText('');
+    }
+  };
+
+  const handlePhoneSubmit = () => {
+    if (phoneNumber.length >= 10) {
+      const code = Math.floor(10000 + Math.random() * 90000).toString();
+      setSentCode(code);
+      setShowPhoneInput(false);
+      setShowCodeInput(true);
+      toast.success(`Код отправлен на номер ${phoneNumber}`, {
+        description: `Ваш код: ${code}`,
+      });
+    } else {
+      toast.error('Введите корректный номер телефона');
+    }
+  };
+
+  const handleCodeSubmit = () => {
+    if (verificationCode === sentCode) {
+      setIsAuthenticated(true);
+      setShowCodeInput(false);
+      toast.success('Вы успешно вошли в Rilmas!');
+    } else {
+      toast.error('Неверный код. Попробуйте снова.');
+      setVerificationCode('');
     }
   };
 
@@ -77,6 +140,87 @@ const Index = () => {
         </div>
       </div>
     );
+  }
+
+  if (showPhoneInput) {
+    return (
+      <div className="h-screen w-full bg-background flex items-center justify-center p-4">
+        <div className="w-full max-w-md animate-scale-in">
+          <div className="bg-card rounded-2xl p-8 border border-border">
+            <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-6">
+              <span className="text-3xl">🎮</span>
+            </div>
+            <h2 className="text-2xl font-bold text-center mb-2">Добро пожаловать в Rilmas</h2>
+            <p className="text-muted-foreground text-center mb-8">Введите номер телефона для регистрации</p>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Номер телефона</Label>
+                <Input
+                  type="tel"
+                  placeholder="+7 (___) ___-__-__"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  className="text-lg"
+                />
+              </div>
+              <Button onClick={handlePhoneSubmit} className="w-full" size="lg">
+                Продолжить
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (showCodeInput) {
+    return (
+      <div className="h-screen w-full bg-background flex items-center justify-center p-4">
+        <div className="w-full max-w-md animate-scale-in">
+          <div className="bg-card rounded-2xl p-8 border border-border">
+            <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-6">
+              <Icon name="ShieldCheck" size={32} />
+            </div>
+            <h2 className="text-2xl font-bold text-center mb-2">Подтверждение</h2>
+            <p className="text-muted-foreground text-center mb-8">
+              Введите 5-значный код, отправленный на номер <br />
+              <span className="font-semibold text-foreground">{phoneNumber}</span>
+            </p>
+            <div className="space-y-6">
+              <div className="flex justify-center">
+                <InputOTP maxLength={5} value={verificationCode} onChange={setVerificationCode}>
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} className="w-14 h-14 text-2xl" />
+                    <InputOTPSlot index={1} className="w-14 h-14 text-2xl" />
+                    <InputOTPSlot index={2} className="w-14 h-14 text-2xl" />
+                    <InputOTPSlot index={3} className="w-14 h-14 text-2xl" />
+                    <InputOTPSlot index={4} className="w-14 h-14 text-2xl" />
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
+              <Button onClick={handleCodeSubmit} className="w-full" size="lg" disabled={verificationCode.length !== 5}>
+                Подтвердить
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setShowCodeInput(false);
+                  setShowPhoneInput(true);
+                  setVerificationCode('');
+                }}
+                className="w-full"
+              >
+                Изменить номер
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
   }
 
   return (
@@ -103,6 +247,22 @@ const Index = () => {
                   <Label>Статус</Label>
                   <Input value={userStatus} onChange={(e) => setUserStatus(e.target.value)} />
                 </div>
+                <div className="space-y-2">
+                  <Label>Номер телефона</Label>
+                  <Input value={phoneNumber} disabled className="bg-muted" />
+                </div>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    localStorage.removeItem('rilmas_user');
+                    setIsAuthenticated(false);
+                    setShowPhoneInput(true);
+                    toast.info('Вы вышли из аккаунта');
+                  }}
+                  className="w-full"
+                >
+                  Выйти из аккаунта
+                </Button>
               </div>
             </DialogContent>
           </Dialog>
