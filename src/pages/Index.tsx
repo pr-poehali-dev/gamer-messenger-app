@@ -4,8 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { toast } from 'sonner';
@@ -108,8 +106,9 @@ const Index = () => {
       setSentCode(code);
       setShowPhoneInput(false);
       setShowCodeInput(true);
-      toast.success(`Код отправлен на номер ${phoneNumber}`, {
-        description: `Ваш код: ${code}`,
+      toast.success(`SMS-код отправлен на ${phoneNumber}`, {
+        description: `Код для входа: ${code}`,
+        duration: 10000,
       });
     } else {
       toast.error('Введите корректный номер телефона');
@@ -120,7 +119,7 @@ const Index = () => {
     if (verificationCode === sentCode) {
       setIsAuthenticated(true);
       setShowCodeInput(false);
-      toast.success('Вы успешно вошли в Rilmas!');
+      toast.success('Добро пожаловать в Rilmas!');
     } else {
       toast.error('Неверный код. Попробуйте снова.');
       setVerificationCode('');
@@ -147,11 +146,17 @@ const Index = () => {
       <div className="h-screen w-full bg-background flex items-center justify-center p-4">
         <div className="w-full max-w-md animate-scale-in">
           <div className="bg-card rounded-2xl p-8 border border-border">
-            <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-6">
-              <span className="text-3xl">🎮</span>
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                <span className="text-2xl">🎮</span>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold">Rilmas</h1>
+                <p className="text-sm text-muted-foreground">Геймерский мессенджер</p>
+              </div>
             </div>
-            <h2 className="text-2xl font-bold text-center mb-2">Добро пожаловать в Rilmas</h2>
-            <p className="text-muted-foreground text-center mb-8">Введите номер телефона для регистрации</p>
+            <h2 className="text-xl font-semibold mb-2">Вход по номеру телефона</h2>
+            <p className="text-muted-foreground mb-6">Мы отправим SMS с кодом подтверждения</p>
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label>Номер телефона</Label>
@@ -160,11 +165,11 @@ const Index = () => {
                   placeholder="+7 (___) ___-__-__"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
-                  className="text-lg"
+                  className="text-lg h-12"
                 />
               </div>
-              <Button onClick={handlePhoneSubmit} className="w-full" size="lg">
-                Продолжить
+              <Button onClick={handlePhoneSubmit} className="w-full h-12" size="lg">
+                Получить код
               </Button>
             </div>
           </div>
@@ -179,11 +184,11 @@ const Index = () => {
         <div className="w-full max-w-md animate-scale-in">
           <div className="bg-card rounded-2xl p-8 border border-border">
             <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-6">
-              <Icon name="ShieldCheck" size={32} />
+              <Icon name="MessageSquareCode" size={32} />
             </div>
-            <h2 className="text-2xl font-bold text-center mb-2">Подтверждение</h2>
+            <h2 className="text-2xl font-bold text-center mb-2">Введите код из SMS</h2>
             <p className="text-muted-foreground text-center mb-8">
-              Введите 5-значный код, отправленный на номер <br />
+              Код отправлен на номер<br />
               <span className="font-semibold text-foreground">{phoneNumber}</span>
             </p>
             <div className="space-y-6">
@@ -198,7 +203,7 @@ const Index = () => {
                   </InputOTPGroup>
                 </InputOTP>
               </div>
-              <Button onClick={handleCodeSubmit} className="w-full" size="lg" disabled={verificationCode.length !== 5}>
+              <Button onClick={handleCodeSubmit} className="w-full h-12" size="lg" disabled={verificationCode.length !== 5}>
                 Подтвердить
               </Button>
               <Button
@@ -224,72 +229,43 @@ const Index = () => {
   }
 
   return (
-    <div className="h-screen w-full bg-background flex overflow-hidden">
-      <div className={`${selectedChat ? 'hidden md:flex' : 'flex'} w-full md:w-80 flex-col border-r border-border animate-fade-in`}>
-        <div className="p-4 border-b border-border flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-primary">Rilmas</h1>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Icon name="Settings" size={20} />
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="bg-card">
-              <DialogHeader>
-                <DialogTitle>Настройки</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label>Имя</Label>
-                  <Input value={userName} onChange={(e) => setUserName(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Статус</Label>
-                  <Input value={userStatus} onChange={(e) => setUserStatus(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Номер телефона</Label>
-                  <Input value={phoneNumber} disabled className="bg-muted" />
-                </div>
-                <Button
-                  variant="destructive"
-                  onClick={() => {
-                    localStorage.removeItem('rilmas_user');
-                    setIsAuthenticated(false);
-                    setShowPhoneInput(true);
-                    toast.info('Вы вышли из аккаунта');
-                  }}
-                  className="w-full"
-                >
-                  Выйти из аккаунта
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+    <div className="h-screen w-full bg-background flex flex-col overflow-hidden">
+      <header className="bg-card border-b border-border px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+            <span className="text-xl">🎮</span>
+          </div>
+          <h1 className="text-xl font-bold">Rilmas</h1>
         </div>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon">
+            <Icon name="Bell" size={20} />
+          </Button>
+          <Button variant="ghost" size="icon">
+            <Icon name="Search" size={20} />
+          </Button>
+        </div>
+      </header>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-          <TabsList className="w-full justify-start rounded-none border-b border-border bg-transparent p-0">
-            <TabsTrigger value="chats" className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary">
-              Чаты
-            </TabsTrigger>
-            <TabsTrigger value="contacts" className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary">
-              Контакты
-            </TabsTrigger>
-            <TabsTrigger value="groups" className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary">
-              Группы
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="chats" className="flex-1 m-0">
-            <ScrollArea className="h-full">
-              {chats.map((chat) => (
+      <div className="flex-1 overflow-hidden">
+        {activeTab === 'chats' && !selectedChat && (
+          <ScrollArea className="h-full animate-fade-in">
+            {chats.length === 0 ? (
+              <div className="h-full flex items-center justify-center p-8">
+                <div className="text-center">
+                  <div className="w-24 h-24 rounded-3xl bg-muted flex items-center justify-center mx-auto mb-4">
+                    <Icon name="MessageSquare" size={40} className="text-muted-foreground" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">Пока нет чатов</h3>
+                  <p className="text-muted-foreground">Пригласите друзей, чтобы начать общение</p>
+                </div>
+              </div>
+            ) : (
+              chats.map((chat) => (
                 <button
                   key={chat.id}
                   onClick={() => setSelectedChat(chat.id)}
-                  className={`w-full p-4 flex items-center gap-3 hover:bg-muted/50 transition-colors ${
-                    selectedChat === chat.id ? 'bg-muted' : ''
-                  }`}
+                  className="w-full p-4 flex items-center gap-3 hover:bg-muted/50 transition-colors border-b border-border"
                 >
                   <Avatar className="h-12 w-12">
                     <AvatarFallback className="bg-primary text-2xl">{chat.avatar}</AvatarFallback>
@@ -302,122 +278,215 @@ const Index = () => {
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground truncate">{chat.lastMessage}</span>
                       {chat.unread && (
-                        <span className="ml-2 bg-primary text-primary-foreground text-xs rounded-full px-2 py-0.5">
+                        <span className="ml-2 bg-primary text-primary-foreground text-xs rounded-full px-2 py-0.5 font-medium">
                           {chat.unread}
                         </span>
                       )}
                     </div>
                   </div>
                 </button>
-              ))}
-            </ScrollArea>
-          </TabsContent>
+              ))
+            )}
+          </ScrollArea>
+        )}
 
-          <TabsContent value="contacts" className="flex-1 m-0">
-            <div className="p-8 text-center text-muted-foreground">
-              <Icon name="Users" size={48} className="mx-auto mb-4 opacity-50" />
-              <p>Добавьте друзей по ссылке-приглашению</p>
+        {activeTab === 'chats' && selectedChat && (
+          <div className="h-full flex flex-col animate-slide-in-right">
+            <div className="p-4 border-b border-border flex items-center gap-3 bg-card">
+              <Button variant="ghost" size="icon" onClick={() => setSelectedChat(null)}>
+                <Icon name="ArrowLeft" size={20} />
+              </Button>
+              <Avatar className="h-10 w-10">
+                <AvatarFallback className="bg-primary text-lg">
+                  {chats.find((c) => c.id === selectedChat)?.avatar}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <div className="font-semibold">{chats.find((c) => c.id === selectedChat)?.name}</div>
+                <div className="text-xs text-muted-foreground">онлайн</div>
+              </div>
+              <Button variant="ghost" size="icon">
+                <Icon name="Phone" size={20} />
+              </Button>
+              <Button variant="ghost" size="icon">
+                <Icon name="Video" size={20} />
+              </Button>
             </div>
-          </TabsContent>
 
-          <TabsContent value="groups" className="flex-1 m-0">
-            <div className="p-8 text-center text-muted-foreground">
-              <Icon name="UsersRound" size={48} className="mx-auto mb-4 opacity-50" />
-              <p>Создайте свою первую группу</p>
-            </div>
-          </TabsContent>
-        </Tabs>
-
-        <div className="p-4 border-t border-border">
-          <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10">
-              <AvatarFallback className="bg-secondary text-lg">👤</AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <div className="font-semibold text-sm">{userName}</div>
-              <div className="text-xs text-muted-foreground">{userStatus}</div>
-            </div>
-            <Button variant="ghost" size="icon">
-              <Icon name="MoreVertical" size={20} />
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {selectedChat ? (
-        <div className="flex-1 flex flex-col animate-slide-in-right">
-          <div className="p-4 border-b border-border flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSelectedChat(null)}>
-              <Icon name="ArrowLeft" size={20} />
-            </Button>
-            <Avatar className="h-10 w-10">
-              <AvatarFallback className="bg-primary text-lg">
-                {chats.find((c) => c.id === selectedChat)?.avatar}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <div className="font-semibold">{chats.find((c) => c.id === selectedChat)?.name}</div>
-              <div className="text-xs text-muted-foreground">онлайн</div>
-            </div>
-            <Button variant="ghost" size="icon">
-              <Icon name="Phone" size={20} />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <Icon name="Video" size={20} />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <Icon name="MoreVertical" size={20} />
-            </Button>
-          </div>
-
-          <ScrollArea className="flex-1 p-4">
-            <div className="space-y-4">
-              {messages.map((msg) => (
-                <div key={msg.id} className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
-                  <div
-                    className={`max-w-[70%] rounded-2xl px-4 py-2 ${
-                      msg.sender === 'me' ? 'bg-primary text-primary-foreground' : 'bg-muted'
-                    }`}
-                  >
-                    <p className="text-sm">{msg.text}</p>
-                    <span className="text-xs opacity-70 mt-1 block">{msg.time}</span>
+            <ScrollArea className="flex-1 p-4">
+              <div className="space-y-4">
+                {messages.map((msg) => (
+                  <div key={msg.id} className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
+                    <div
+                      className={`max-w-[75%] rounded-2xl px-4 py-2 ${
+                        msg.sender === 'me' ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                      }`}
+                    >
+                      <p className="text-sm">{msg.text}</p>
+                      <span className="text-xs opacity-70 mt-1 block">{msg.time}</span>
+                    </div>
                   </div>
+                ))}
+              </div>
+            </ScrollArea>
+
+            <div className="p-4 border-t border-border bg-card">
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon">
+                  <Icon name="Plus" size={20} />
+                </Button>
+                <Input
+                  placeholder="Сообщение..."
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                  className="flex-1"
+                />
+                <Button onClick={sendMessage} size="icon">
+                  <Icon name="Send" size={20} />
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'groups' && (
+          <div className="h-full flex items-center justify-center p-8 animate-fade-in">
+            <div className="text-center">
+              <div className="w-24 h-24 rounded-3xl bg-muted flex items-center justify-center mx-auto mb-4">
+                <Icon name="Users" size={40} className="text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Группы</h3>
+              <p className="text-muted-foreground mb-4">Создавайте группы до 200 000 участников</p>
+              <Button>
+                <Icon name="Plus" size={18} className="mr-2" />
+                Создать группу
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'friends' && (
+          <div className="h-full flex items-center justify-center p-8 animate-fade-in">
+            <div className="text-center">
+              <div className="w-24 h-24 rounded-3xl bg-muted flex items-center justify-center mx-auto mb-4">
+                <Icon name="UserPlus" size={40} className="text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Друзья</h3>
+              <p className="text-muted-foreground mb-4">Приглашайте друзей по ссылке</p>
+              <Button>
+                <Icon name="Share2" size={18} className="mr-2" />
+                Пригласить друзей
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'games' && (
+          <div className="h-full flex items-center justify-center p-8 animate-fade-in">
+            <div className="text-center">
+              <div className="w-24 h-24 rounded-3xl bg-muted flex items-center justify-center mx-auto mb-4">
+                <Icon name="Gamepad2" size={40} className="text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Игры</h3>
+              <p className="text-muted-foreground">Скоро здесь появятся игры</p>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'profile' && (
+          <ScrollArea className="h-full animate-fade-in">
+            <div className="p-6 space-y-6">
+              <div className="flex items-center gap-4">
+                <Avatar className="h-20 w-20">
+                  <AvatarFallback className="bg-secondary text-3xl">👤</AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <h2 className="text-xl font-bold">{userName}</h2>
+                  <p className="text-muted-foreground">{userStatus}</p>
                 </div>
-              ))}
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Имя пользователя</Label>
+                  <Input value={userName} onChange={(e) => setUserName(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Статус</Label>
+                  <Input value={userStatus} onChange={(e) => setUserStatus(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Номер телефона</Label>
+                  <Input value={phoneNumber} disabled className="bg-muted" />
+                </div>
+              </div>
+
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  localStorage.removeItem('rilmas_user');
+                  setIsAuthenticated(false);
+                  setShowPhoneInput(true);
+                  toast.info('Вы вышли из аккаунта');
+                }}
+                className="w-full"
+              >
+                <Icon name="LogOut" size={18} className="mr-2" />
+                Выйти из аккаунта
+              </Button>
             </div>
           </ScrollArea>
+        )}
+      </div>
 
-          <div className="p-4 border-t border-border">
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon">
-                <Icon name="Paperclip" size={20} />
-              </Button>
-              <Button variant="ghost" size="icon">
-                <Icon name="Smile" size={20} />
-              </Button>
-              <Input
-                placeholder="Введите сообщение..."
-                value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                className="flex-1"
-              />
-              <Button onClick={sendMessage} size="icon">
-                <Icon name="Send" size={20} />
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="hidden md:flex flex-1 items-center justify-center text-muted-foreground">
-          <div className="text-center">
-            <div className="w-24 h-24 rounded-2xl bg-primary/20 flex items-center justify-center mx-auto mb-4">
-              <span className="text-5xl">💬</span>
-            </div>
-            <p className="text-lg">Выберите чат для начала общения</p>
-          </div>
-        </div>
-      )}
+      <nav className="bg-card border-t border-border px-2 py-2 flex items-center justify-around">
+        <button
+          onClick={() => { setActiveTab('chats'); setSelectedChat(null); }}
+          className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors ${
+            activeTab === 'chats' ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Icon name="MessageSquare" size={24} />
+          <span className="text-xs font-medium">Чаты</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('groups')}
+          className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors ${
+            activeTab === 'groups' ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Icon name="Users" size={24} />
+          <span className="text-xs font-medium">Группы</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('friends')}
+          className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors ${
+            activeTab === 'friends' ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Icon name="UserPlus" size={24} />
+          <span className="text-xs font-medium">Друзья</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('games')}
+          className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors ${
+            activeTab === 'games' ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Icon name="Gamepad2" size={24} />
+          <span className="text-xs font-medium">Игры</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('profile')}
+          className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors ${
+            activeTab === 'profile' ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Icon name="User" size={24} />
+          <span className="text-xs font-medium">Профиль</span>
+        </button>
+      </nav>
     </div>
   );
 };
